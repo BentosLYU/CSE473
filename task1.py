@@ -105,10 +105,32 @@ def convolve2d(img, kernel):
     Returns:
         img_conv: nested list (int), convolved image.
     """
+    # Flip Kernel
+    flipped_kernel = utils.flip2d(kernel)
+
+    #Pad image
+    kernelx = len(kernel)
+    kernely = len(kernel[0])
+    pad_amt_x = int(kernelx/2)
+    pad_amt_y = int(kernely/2)
+    padded_img = utils.zero_pad(img,pad_amt_x,pad_amt_y)
+
+    # Convolve image with kernel
+    convolved_img = copy.deepcopy(img)
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+            weighted_sum = 0;
+            for ki in range(kernelx):
+                for kj in range(kernely):
+                    weighted_sum += flipped_kernel[ki][kj]*padded_img[i- pad_amt_x + ki][j - pad_amt_y + kj]
+            convolved_img[i][j] = weighted_sum
+    return convolved_img
+
     # TODO: implement this function.
-    raise NotImplementedError
+    # raise NotImplementedError
 
 def main():
+
     args = parse_args()
 
     img = read_image(args.img_path)
