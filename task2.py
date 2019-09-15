@@ -16,6 +16,7 @@ Do NOT import ANY library (function, module, etc.).
 import argparse
 import json
 import os
+import numpy as np
 
 import utils
 from task1 import *
@@ -58,7 +59,31 @@ def norm_xcorr2d(patch, template):
     Returns:
         value (float): the NCC value between a image patch and a template.
     """
-    raise NotImplementedError
+    size = len(patch)*len(patch[0])
+    size1 = len(template)*len(template[0])
+    mean_template = 0
+    for i in template:
+        mean_template += sum(i)
+    mean_template /= size
+
+    mean_patch = 0
+    for i in patch:
+        mean_patch += sum(i)
+    mean_patch /= size
+
+    sum1 = 0
+    sum2 = 0
+    sum3 = 0
+    for i in range(len(patch)):
+        for j in range(len(patch)):
+            sum1 += (patch[i][j]-mean_patch)*(template[i][j]-mean_template)
+            sum2 += (patch[i][j]-mean_patch)**2
+            sum3 += (template[i][j]-mean_template)**2
+
+
+    return (sum1)/np.sqrt(sum2*sum3)
+
+    # raise NotImplementedError
 
 def match(img, template):
     """Locates the template, i.e., a image patch, in a large image using template matching techniques, i.e., NCC.
@@ -72,9 +97,26 @@ def match(img, template):
         y (int): column that the character appears (starts from 0).
         max_value (float): maximum NCC value.
     """
+    template_x = len(template)
+    template_y = len(template[0])
+
+    maximum = 0
+    max_x = 0
+    max_y = 0
+
+    for x,val_x in enumerate(img[0:-template_x]):
+        for y,val_y in enumerate(val_x[0:-template_y]):
+            patch = utils.crop(img,x,x+template_x,y,y+template_y)
+            NCC = norm_xcorr2d(patch,template)
+            if NCC >= maximum:
+                maximum = NCC
+                max_x = x
+                max_y = y
+
+    return max_x, max_y, maximum
     # TODO: implement this function.
     # raise NotImplementedError
-    raise NotImplementedError
+    # raise NotImplementedError
 
 def save_results(coordinates, template, template_name, rs_directory):
     results = {}
