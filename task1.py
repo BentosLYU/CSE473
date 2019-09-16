@@ -122,7 +122,7 @@ def convolve2d(img, kernel):
             weighted_sum = 0;
             for ki in range(kernelx):
                 for kj in range(kernely):
-                    weighted_sum += flipped_kernel[ki][kj]*padded_img[i- pad_amt_x + ki][j - pad_amt_y + kj]
+                    weighted_sum += flipped_kernel[ki][kj]*padded_img[i + ki][j + kj]
             convolved_img[i][j] = weighted_sum
     return convolved_img
 
