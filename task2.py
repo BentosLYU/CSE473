@@ -4,14 +4,14 @@ Template Matching
 
 The goal of this task is to experiment with template matching techniques, i.e., normalized cross correlation (NCC).
 
-Please complete all the functions that are labelled with '# TODO'. When implementing those functions, comment the lines 'raise NotImplementedError' instead of deleting them. The functions defined in 'utils.py'
-and the functions you implement in 'task1.py' are of great help.
+Please complete all the functions that are labelled with '# TODO'. When implementing those functions, comment the
+lines 'raise NotImplementedError' instead of deleting them. The functions defined in 'utils.py' and the functions you
+implement in 'task1.py' are of great help.
 
 Do NOT modify the code provided to you.
 Do NOT use ANY API provided by opencv (cv2) and numpy (np) in your code.
 Do NOT import ANY library (function, module, etc.).
 """
-
 
 import argparse
 import json
@@ -45,6 +45,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def norm_xcorr2d(patch, template):
     """Computes the NCC value between a image patch and a template.
 
@@ -59,8 +60,7 @@ def norm_xcorr2d(patch, template):
     Returns:
         value (float): the NCC value between a image patch and a template.
     """
-    size = len(patch)*len(patch[0])
-    size1 = len(template)*len(template[0])
+    size = len(patch) * len(patch[0])
     mean_template = 0
     for i in template:
         mean_template += sum(i)
@@ -76,14 +76,14 @@ def norm_xcorr2d(patch, template):
     sum3 = 0
     for i in range(len(patch)):
         for j in range(len(patch)):
-            sum1 += (patch[i][j]-mean_patch)*(template[i][j]-mean_template)
-            sum2 += (patch[i][j]-mean_patch)**2
-            sum3 += (template[i][j]-mean_template)**2
+            sum1 += (patch[i][j] - mean_patch) * (template[i][j] - mean_template)
+            sum2 += (patch[i][j] - mean_patch) ** 2
+            sum3 += (template[i][j] - mean_template) ** 2
 
-
-    return (sum1)/np.sqrt(sum2*sum3)
+    return sum1 / np.sqrt(sum2 * sum3)
 
     # raise NotImplementedError
+
 
 def match(img, template):
     """Locates the template, i.e., a image patch, in a large image using template matching techniques, i.e., NCC.
@@ -100,14 +100,14 @@ def match(img, template):
     template_x = len(template)
     template_y = len(template[0])
 
-    maximum = 0
-    max_x = 0
-    max_y = 0
+    maximum = -1
+    max_x = -1
+    max_y = -1
 
-    for x,val_x in enumerate(img[0:-template_x]):
-        for y,val_y in enumerate(val_x[0:-template_y]):
-            patch = utils.crop(img,x,x+template_x,y,y+template_y)
-            NCC = norm_xcorr2d(patch,template)
+    for x, val_x in enumerate(img[:-template_x]):
+        for y, val_y in enumerate(val_x[:-template_y]):
+            patch = utils.crop(img, x, x + template_x, y, y + template_y)
+            NCC = norm_xcorr2d(patch, template)
             if NCC >= maximum:
                 maximum = NCC
                 max_x = x
@@ -116,7 +116,7 @@ def match(img, template):
     return max_x, max_y, maximum
     # TODO: implement this function.
     # raise NotImplementedError
-    # raise NotImplementedError
+
 
 def save_results(coordinates, template, template_name, rs_directory):
     results = {}

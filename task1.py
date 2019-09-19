@@ -24,8 +24,8 @@ import numpy as np
 import utils
 
 # low_pass filter and high-pass filter
-low_pass = [[1/16, 1/8, 1/16], [1/8, 1/4, 1/8], [1/16, 1/8, 1/16]]
-high_pass = [[-1/8, -1/8, -1/8], [-1/8, 2, -1/8], [-1/8, -1/8, -1/8]]
+low_pass = [[1 / 16, 1 / 8, 1 / 16], [1 / 8, 1 / 4, 1 / 8], [1 / 16, 1 / 8, 1 / 16]]
+high_pass = [[-1 / 8, -1 / 8, -1 / 8], [-1 / 8, 2, -1 / 8], [-1 / 8, -1 / 8, -1 / 8]]
 
 
 def parse_args():
@@ -67,6 +67,7 @@ def read_image(img_path, show=False):
     img = [list(row) for row in img]
     return img
 
+
 def show_image(img, delay=1000):
     """Shows an image.
     """
@@ -74,6 +75,7 @@ def show_image(img, delay=1000):
     cv2.imshow('image', img)
     cv2.waitKey(delay)
     cv2.destroyAllWindows()
+
 
 def write_image(img, img_saving_path):
     """Writes an image to a given path.
@@ -88,6 +90,7 @@ def write_image(img, img_saving_path):
         raise TypeError("img is neither a list nor a ndarray.")
 
     cv2.imwrite(img_saving_path, img)
+
 
 def convolve2d(img, kernel):
     """Convolves a given image and a given kernel.
@@ -108,12 +111,12 @@ def convolve2d(img, kernel):
     # Flip Kernel
     flipped_kernel = utils.flip2d(kernel)
 
-    #Pad image
+    # Pad image
     kernelx = len(kernel)
     kernely = len(kernel[0])
-    pad_amt_x = int(kernelx/2)
-    pad_amt_y = int(kernely/2)
-    padded_img = utils.zero_pad(img,pad_amt_x,pad_amt_y)
+    pad_amt_x = int(kernelx / 2)
+    pad_amt_y = int(kernely / 2)
+    padded_img = utils.zero_pad(img, pad_amt_x, pad_amt_y)
 
     # Convolve image with kernel
     convolved_img = copy.deepcopy(img)
@@ -122,15 +125,15 @@ def convolve2d(img, kernel):
             weighted_sum = 0;
             for ki in range(kernelx):
                 for kj in range(kernely):
-                    weighted_sum += flipped_kernel[ki][kj]*padded_img[i + ki][j + kj]
+                    weighted_sum += flipped_kernel[ki][kj] * padded_img[i + ki][j + kj]
             convolved_img[i][j] = weighted_sum
     return convolved_img
 
     # TODO: implement this function.
     # raise NotImplementedError
 
-def main():
 
+def main():
     args = parse_args()
 
     img = read_image(args.img_path)
