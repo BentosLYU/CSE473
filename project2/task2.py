@@ -100,24 +100,27 @@ def solution(left_img, right_img):
     left_pts = np.float32([lkp[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     right_pts = np.float32([rkp[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
     # 4 compute the homographymatrix using RANSAC
-    M, mask = cv2.findHomography(right_pts, left_pts, cv2.RANSAC, 5.0)
+    H, _ = cv2.findHomography(right_pts, left_pts, cv2.RANSAC, 5.0)
     M1, mask1 = cv2.findHomography(left_pts, right_pts, cv2.RANSAC, 5.0)
-    print(M)
+    print(H)
     print(M1)
 
     # 5 us the homographic matrix to stitch the images together
     # i am giong to use the left image as the base image and warp the right image so that the
-    res = np.zeros((2*left_img.shape[0],2*left_img.shape[0]), dtype=np.uint8)
-    x = res.shape
-    print(right_img.shape)
-    left = cv2.warpPerspective(left_img, M, res.shape)
-    right = cv2.warpPerspective(right_img, M, res.shape)
+    res = (right_img.shape[1]+left_img.shape[1], right_img.shape[0])
+    result = cv2.warpPerspective(right_img, H, res)
+    cv2.imshow('pre-stitch-result', result)
+    result[0:left_img.shape[0], 0:left_img.shape[1]] = left_img
+    # result[0:left_img.shape[0], 0:left_img.shape[1]] += left_img
 
 
-    cv2.imshow('left', left)
-    cv2.imshow('right', right)
+
+
+    cv2.imshow('result', result)
     if cv2.waitKey(0) & 0xff == 27:
         cv2.destroyAllWindows()
+
+    return result
 
 if __name__ == "__main__":
     left_img = cv2.imread('left.jpg')
