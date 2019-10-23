@@ -25,100 +25,67 @@ def solution(left_img, right_img):
     :param right_img:
     :return: you need to return the result image which is stitched by left_img and right_img
     """
-    # 1 Find Key point using harris detector
-    lgray = cv2.cvtColor(left_img, cv2.COLOR_BGR2GRAY)
-    lgray = np.float32(lgray)
-    # dst = cv2.cornerHarris(lgray, 2, 3, 0.04)
-    # dst = cv2.dilate(dst, None)
-    # left_img[dst > 0.01 * dst.max()] = [0, 0, 255]
-    # cv2.imshow('left', left_img)
-    # if cv2.waitKey(0) & 0xff == 27:
-    #     cv2.destroyAllWindows()
+    print_results = False
 
-    rgray = cv2.cvtColor(right_img, cv2.COLOR_BGR2GRAY)
-    rgray = np.float32(rgray)
-    # dst = cv2.cornerHarris(rgray, 2, 3, 0.04)
-    # dst = cv2.dilate(dst, None)
-    # right_img[dst > 0.01 * dst.max()] = [0, 0, 255]
-    # cv2.imshow('right', right_img)
-    # if cv2.waitKey(0) & 0xff == 27:
-    #     cv2.destroyAllWindows()
+    # Get grayscale images
+    left_gray = np.float32(cv2.cvtColor(left_img, cv2.COLOR_BGR2GRAY))
+    right_gray = np.float32(cv2.cvtColor(right_img, cv2.COLOR_BGR2GRAY))
 
-    # 2 use SIFT to extracture featrures
-    # use cv2.xfeatures2d.SIFT_create()
+
+
+    # 1: Use Kaze to fiind the features
     kaze = cv2.KAZE_create(threshold=20)
-    lkp, ldesc = kaze.detectAndCompute(lgray, None)
-    left_img = cv2.drawKeypoints(left_img, lkp, left_img, flags=cv2.DrawMatchesFlags_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow('left', left_img)
-    # if cv2.waitKey(0) & 0xff == 27:
-    #     cv2.destroyAllWindows()
+    right_keypoints, right_desc = kaze.detectAndCompute(right_gray, None)
+    left_keypoints, left_desc = kaze.detectAndCompute(left_gray, None)
 
-    length = len(lkp)
-    print(length)
+    if print_results:
+        # draw the keypoints on the images
+        left_kps = cv2.drawKeypoints(left_img, left_keypoints, np.empty(left_img.shape),
+                                     flags=cv2.DrawMatchesFlags_DRAW_RICH_KEYPOINTS)
+        right_kps = cv2.drawKeypoints(right_img, right_keypoints, np.empty(right_img.shape),
+                                      flags=cv2.DrawMatchesFlags_DRAW_RICH_KEYPOINTS)
+        cv2.imshow('left keypoints', left_kps)
+        cv2.imshow('right keypoints', right_kps)
 
-    # kaze = cv2.KAZE_create(threshold=40)
-    rkp, rdesc = kaze.detectAndCompute(rgray, None)
-    right_img = cv2.drawKeypoints(right_img, rkp, right_img, flags=cv2.DrawMatchesFlags_DRAW_RICH_KEYPOINTS)
-    # cv2.imshow('right', right_img)
-    # if cv2.waitKey(0) & 0xff == 27:
-    #     cv2.destroyAllWindows()
-
-    length = len(rkp)
-    print(length)
-
-
-    # 3 match key points
-    matcher = cv2.BFMatcher()
-    nn_matches = matcher.knnMatch(ldesc, rdesc, 2)
-
-    # matched1 = []
-    # matched2 = []
+    # 2: Match key points (brute force matching could be improved upon)
     matches = []
-    nn_match_ratio = 0.5  # Nearest neighbor matching ratio
-    print(len(nn_matches))
+    nn_match_ratio = 0.5  # matching ratio
 
+    matcher = cv2.BFMatcher()
+    nn_matches = matcher.knnMatch(left_desc, right_desc, 2)
     for m, n in nn_matches:
         if m.distance < nn_match_ratio * n.distance:
             matches.append(m)
-            # matched2.append(rkp[m.trainIdx])
 
-    print(len(matches))
 
-    # DMatch vectors
-    # matches = []
-    # for i in range(len(matched1)):
-    #     matches.append(cv2.DMatch(i, i), 0)
+    if print_results:
+        # draw all matches
+        res = np.empty((max(left_img.shape[0], right_img.shape[0]), left_img.shape[1] + right_img.shape[1], 3), dtype=np.uint8)
+        res = cv2.drawMatches(left_img, left_keypoints, right_img, right_keypoints, matches, res,
+                              flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
-    res = np.empty((max(left_img.shape[0], right_img.shape[0]), left_img.shape[1] + right_img.shape[1], 3), dtype=np.uint8)
-    out2 = cv2.drawMatches(left_img, lkp, right_img, rkp, matches, res,
-                          flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        cv2.imshow('matched keypoints', res)
 
-    cv2.imshow('out2', out2)
-    # if cv2.waitKey(0) & 0xff == 27:
-    #     cv2.destroyAllWindows()
-
-    left_pts = np.float32([lkp[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-    right_pts = np.float32([rkp[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-    # 4 compute the homographymatrix using RANSAC
+    # 3: Compute the homeography matrix using RANSAC
+    left_pts = np.float32([left_keypoints[m.queryIdx].pt for m in matches])
+    right_pts = np.float32([right_keypoints[m.trainIdx].pt for m in matches])#.reshape(-1, 1, 2)
     H, _ = cv2.findHomography(right_pts, left_pts, cv2.RANSAC, 5.0)
-    M1, mask1 = cv2.findHomography(left_pts, right_pts, cv2.RANSAC, 5.0)
-    print(H)
-    print(M1)
+    # Gives a transformation from the right coords to the left coords
 
-    # 5 us the homographic matrix to stitch the images together
-    # i am giong to use the left image as the base image and warp the right image so that the
-    res = (right_img.shape[1]+left_img.shape[1], right_img.shape[0])
-    result = cv2.warpPerspective(right_img, H, res)
-    cv2.imshow('pre-stitch-result', result)
+    # 4: Use the homographic matrix to stitch the images together
+    dims = (right_img.shape[1]+left_img.shape[1], right_img.shape[0])
+    result = cv2.warpPerspective(right_img, H, dims) # warp the right image into left image coords
+
+    if print_results:
+       cv2.imshow('transformed image', result)
+
     result[0:left_img.shape[0], 0:left_img.shape[1]] = left_img
-    # result[0:left_img.shape[0], 0:left_img.shape[1]] += left_img
 
-
-
-
-    cv2.imshow('result', result)
-    if cv2.waitKey(0) & 0xff == 27:
-        cv2.destroyAllWindows()
+    if print_results:
+        cv2.imshow('result', result)
+        # Clean up the images
+        if cv2.waitKey(0) & 0xff == 27:
+            cv2.destroyAllWindows()
 
     return result
 
