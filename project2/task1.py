@@ -13,6 +13,7 @@ start from this two points in next iteration.
 """
 import random
 
+
 def distance_sq(P1, P2, p):
     """
     This function gets the square of the perpendicular distance from the line defined by P1 and P2 to the point p
@@ -35,13 +36,19 @@ def error_inliers_outliers(points, error, tolerance):
     outliers = []
 
     for i, pt in enumerate(points):
-        error_total += error[i]
         if error[i] <= tolerance:
             inliers.append(pt)
+            error_total += error[i]
         else:
             outliers.append(pt)
 
-    return error_total, inliers, outliers
+    if len(inliers)-2 == 0:
+        mean = 9999999999999
+    else:
+        # subract 2 because the starting points are included
+        mean = error_total/(len(inliers)-2)
+
+    return mean, inliers, outliers
 
 
 def solution(input_points, t, d, k):
@@ -62,14 +69,19 @@ def solution(input_points, t, d, k):
     if len(input_points) <= 2:
         print("only two or less points given")
 
-    dist_sq = [distance_sq(input_points[0], input_points[1], pt) for pt in input_points]
-    least_error, least_error_inliers, least_error_outliers = error_inliers_outliers(input_points, dist_sq, t ** 2);
+
+    least_error = 9999999999999999
+    least_error_inliers = []
+    least_error_outliers = []
     num_permutations = len(input_points)*(len(input_points)-1)
-    prev_pairs = [[input_points[0], input_points[1]]]
+    prev_pairs = []
+    # starting_pts = ('', '')
 
     for i in range(k):
         # pick the starting points
         # need unique point names
+
+        length = len(prev_pairs)
         if len(prev_pairs) >= num_permutations:
             break
 
@@ -83,9 +95,14 @@ def solution(input_points, t, d, k):
         # compute the perpendicular distances to points
         dist_sq = [distance_sq(*starting_pts, pt) for pt in input_points]
 
-        error_total, inliers, outliers = error_inliers_outliers(input_points,dist_sq,t**2)
-        if error_total < least_error:
-            least_error = error_total
+        mean_error, inliers, outliers = error_inliers_outliers(input_points,dist_sq,t**2)
+
+        if len(inliers) < d:
+            continue
+
+        if (mean_error < least_error or
+                mean_error == least_error and len(inliers) > len(least_error_inliers)):
+            least_error = mean_error
             least_error_inliers = inliers
             least_error_outliers = outliers
 
