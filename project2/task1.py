@@ -91,13 +91,14 @@ def solution(input_points, t, d, k):
                 prev_pairs.append(starting_pts)
                 break
 
+        # print(starting_pts)
         # need to compute the line that defines the given points
         # compute the perpendicular distances to points
         dist_sq = [distance_sq(*starting_pts, pt) for pt in input_points]
 
         mean_error, inliers, outliers = error_inliers_outliers(input_points,dist_sq,t**2)
 
-        if len(inliers) < d:
+        if len(inliers) - 2 < d:
             continue
 
         if (mean_error < least_error or
@@ -105,6 +106,10 @@ def solution(input_points, t, d, k):
             least_error = mean_error
             least_error_inliers = inliers
             least_error_outliers = outliers
+
+    if len(least_error_inliers)-2 < d:
+        print("could not find good model")
+        return [], [n['name'] for n in input_points]
 
     return [n['name'] for n in least_error_inliers], [n['name'] for n in least_error_outliers]
 
@@ -114,6 +119,7 @@ if __name__ == "__main__":
                     {'name': 'c', 'value': (3.0, 1.0)}, {'name': 'd', 'value': (0.0, 3.0)},
                     {'name': 'e', 'value': (1.0, 2.0)}, {'name': 'f', 'value': (1.5, 1.5)},
                     {'name': 'g', 'value': (1.0, 1.0)}, {'name': 'h', 'value': (1.5, 2.0)}]
+
     t = 0.5
     d = 3
     k = 100
