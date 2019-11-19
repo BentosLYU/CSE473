@@ -33,18 +33,22 @@ def kmeans(img,k):
             Minimum summation of distance between each pixel and its center.  
     """
 
-    print(img)
+    best_pt = np.random.choice(np.arange(256), 2, replace=False)
+    best_img_labels = np.zeros_like(img)
+    min_error = int(9999999999)
+
     # Randomly choose k-centers
     # Initialize centers in range [0,255]
     init_pts = np.random.choice(np.arange(256), 2, replace=False)
 
     # Calculate all distances: Iterate until the the centers do not change
+    img_label =
 
     # Iterate on different initializations and output the best center
 
     # return clustering center values, clustering labels of all pixels, the total sum of the centers to each pixel
 
-    return (0,0), img, 0
+    return best_pt, best_img_labels, min_error
     # TODO: implement this function.
 
 
