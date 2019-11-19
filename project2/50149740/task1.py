@@ -69,6 +69,7 @@ def solution(input_points, t, d, k):
     if len(input_points) <= 2:
         print("only two or less points given")
 
+
     least_error = 9999999999999999
     least_error_inliers = []
     least_error_outliers = []
