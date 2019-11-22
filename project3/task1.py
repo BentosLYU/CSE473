@@ -19,7 +19,7 @@ import json
 import time
 
 
-def kmeans(img,k):
+def kmeans(img, k):
     """
     Implement kmeans clustering on the given image.
     Steps:
@@ -33,69 +33,66 @@ def kmeans(img,k):
             Minimum summation of distance between each pixel and its center.  
     """
     # Return Values
-    # best_center_pts = np.random.choice(np.arange(256), 2, replace=False)
-    # best_img_labels = np.empty_like(img)
-    # min_error = 99999
+    best_center_pts = np.random.choice(np.arange(256, dtype=np.uint8), 2, replace=False)
+    best_img_labels = np.empty_like(img)
+    min_error = 9999999
+    iterations = 10
+    for iteration in range(iterations):
+        # Randomly choose k-centers
+        # Initialize centers in range [0,255]
+        img = img.astype(np.uint8)
+        rows, columns = img.shape
+        # center_pts = np.around(np.random.choice(256, k, replace=False))
+        center_pts = [31, 131]
+        print(center_pts)
+        tol = 0.001
 
+        while True:
+            # Calculate all the errors
+            img_errors = np.empty((rows, columns, k), dtype=np.uint8)
+            for i in range(k):
+                img_errors[:, :, i] = np.abs(img - center_pts[i])
 
-    # Randomly choose k-centers
-    # Initialize centers in range [0,255]
-    rows, columns = img.shape
-    x_s = np.random.choice(rows, k, replace=True)
-    y_s = np.random.choice(columns, k, replace=True)
-    # print(tuple(zip(x_s, y_s)))
-    center_pts = img[x_s, y_s]
-    tol = 0.001
+            # Calculate image labels
+            img_label = np.argmin(img_errors, axis=2)
 
-    while True:
-        # Calculate all the errors
-        print('center points: {}'.format(center_pts))
-        img_errors = np.empty((rows, columns, k))
-        for i in range(rows):
-            for j in range(columns):
-                img_errors[i, j, :] = np.abs(img[i, j]-center_pts)
+            # Calculate total error
+            error = np.sum(np.min(img_errors, axis=2))
 
-        # Calculate image labels
-        img_label = np.argmin(img_errors, axis=2)
+            # Calculate new center point (center of the labeled groups)
+            sums = np.zeros_like(center_pts, dtype=int)
+            counts = np.zeros_like(center_pts, dtype=int)
+            for i in range(rows):
+                for j in range(columns):
+                    sums[img_label[i, j]] += img[i, j]
+                    counts[img_label[i, j]] += 1
 
-        # Calculate total error
-        error = np.sum(np.min(img_errors, axis=2))
-        print('error: {}'.format(error))
-        # error = 0
-        # for i in range(rows):
-        #     for j in range(columns):
-        #         error += img_errors[i, j, img_label[i,j]]
+            # Need to check for divide by zero
+            if np.any(counts == 0):
+                print('counts is 0')
+                break
 
-        # Calculate new center point (center of the labeled groups)
-        new_center_pts = np.zeros_like(center_pts)
-        counts = np.zeros_like(center_pts, dtype=int)
-        for i in range(rows):
-            for j in range(columns):
-                new_center_pts[img_label[i, j]] += img[i, j]
-                counts[img_label[i, j]] += 1
+            new_center_pts = np.around(sums/counts)
+            print(center_pts)
+            # print(new_center_pts)
 
-        # Need to check for divide by zero
-        print(counts)
-        print(new_center_pts)
-        if np.any(counts == 0):
-            break
-        new_center_pts = new_center_pts/counts
+            # Iterate until the the centers do not change
+            print('error: {}'.format(error))
+            if error < min_error:
+                best_center_pts = center_pts
+                min_error = error
+                best_img_labels = img_label
 
-        # Iterate until the the centers do not change
-        if np.all(new_center_pts-center_pts < tol):
-            # best_center_pts = new_center_pts
-            # min_error = error
-            # best_img_labels = img_label
-            print(new_center_pts-center_pts)
-            break
-        else:
-            center_pts = new_center_pts
+            if np.all(new_center_pts-center_pts < tol):
+                break
+            else:
+                center_pts = new_center_pts
 
-    # Iterate on different initializations and output the best center
+        # Iterate on different initializations and output the best center
 
     # return clustering center values, clustering labels of all pixels, the total sum of the centers to each pixel
-
-    return new_center_pts, img_label, error
+    # new_center_pts = np.around(new_center_pts)
+    return [int(c) for c in best_center_pts], best_img_labels, int(min_error)
 
 
 def visualize(centers,labels):
@@ -105,23 +102,24 @@ def visualize(centers,labels):
          Clustering labels of all pixels. 
     Return: Segmentation map.
     """
+    centers = np.array(centers, dtype=np.uint8)
+    labels = np.array(labels, dtype=np.uint8)
     rows, columns = labels.shape
-    im = np.empty_like(labels, dtype=float)
+    im = np.empty_like(labels, dtype=np.uint8)
     for i in range(rows):
         for j in range(columns):
             im[i, j] = centers[labels[i, j]]
 
-    print(centers)
+    print('centers: {}'.format(centers))
     return im
 
      
 if __name__ == "__main__":
-    img = utils.read_image('lenna.png')
-    img = img/255
+    img = utils.read_image('monroe.PNG')
     k = 2
     print("maximum value: {}".format(np.max(img)))
     start_time = time.time()
-    centers, labels, sumdistance = kmeans(img,k)
+    centers, labels, sumdistance = kmeans(img, k)
     result = visualize(centers, labels)
     end_time = time.time()
 

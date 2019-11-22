@@ -24,15 +24,29 @@ def median_filter(img):
     Arg: Input image. 
     Return: Filtered image.
     """
-    # TODO: implement this function.
+    filter_size = 3
+    pad = int(filter_size/2)
+    out_img = np.empty_like(img)
+    # pad zeros for 3x3 filter
+    padded_img = utils.zero_pad(img, pad, pad)
+
+    # use the square median filter
+    rows, columns = padded_img.shape
+    for i in range(pad, rows - pad):
+        for j in range(pad, columns - pad):
+            out_img[i-pad, j-pad] = np.median(padded_img[i-pad:i+pad+1, j-pad:j+pad+1])
+            # print(np.sort(padded_img[i-pad:i+pad+1, j-pad:j+pad]))
+    return out_img
 
 def mse(img1, img2):
     """
     Calculate mean square error of two images.
     Arg: Two images to be compared.
     Return: Mean square error.
-    """    
-    # TODO: implement this function.
+    """
+    # we are finding the mean of the square error
+    square_error = np.square(img1 - img2)
+    return np.mean(square_error)
     
 
 if __name__ == "__main__":
