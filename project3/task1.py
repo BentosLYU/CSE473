@@ -33,18 +33,15 @@ def kmeans(img, k):
             Minimum summation of distance between each pixel and its center.  
     """
     # Return Values
-    best_center_pts = np.random.choice(np.arange(256, dtype=np.uint8), 2, replace=False)
+    best_center_pts = np.random.choice(np.arange(256, dtype=int), 2, replace=False)
     best_img_labels = np.empty_like(img)
-    min_error = 9999999
-    iterations = 10
+    min_error = 9999999999
+    iterations = 1
     for iteration in range(iterations):
         # Randomly choose k-centers
         # Initialize centers in range [0,255]
-        img = img.astype(np.uint8)
         rows, columns = img.shape
-        # center_pts = np.around(np.random.choice(256, k, replace=False))
-        center_pts = [31, 131]
-        print(center_pts)
+        center_pts = np.random.choice(np.arange(256, dtype=int), 2, replace=False)
         tol = 0.001
 
         while True:
@@ -59,39 +56,34 @@ def kmeans(img, k):
             # Calculate total error
             error = np.sum(np.min(img_errors, axis=2))
 
-            # Calculate new center point (center of the labeled groups)
-            sums = np.zeros_like(center_pts, dtype=int)
-            counts = np.zeros_like(center_pts, dtype=int)
-            for i in range(rows):
-                for j in range(columns):
-                    sums[img_label[i, j]] += img[i, j]
-                    counts[img_label[i, j]] += 1
-
-            # Need to check for divide by zero
-            if np.any(counts == 0):
-                print('counts is 0')
-                break
-
-            new_center_pts = np.around(sums/counts)
-            print(center_pts)
-            # print(new_center_pts)
-
-            # Iterate until the the centers do not change
-            print('error: {}'.format(error))
             if error < min_error:
                 best_center_pts = center_pts
                 min_error = error
                 best_img_labels = img_label
 
+            # Calculate new center point (center of the labeled groups)
+            # sums = np.zeros_like(center_pts, dtype=int)
+            # counts = np.zeros_like(center_pts, dtype=int)
+            new_center_pts = np.zeros_like(center_pts, dtype=float)
+            for i in range(k):
+                new_center_pts[i] = np.around(np.mean(img[img_label == i]))
+
+            # Need to check for Nan (meaning a group does not have any pixels)
+
+            # if np.any(counts == 0):
+            #     print('counts is 0')
+            #     break
+
+
+
+            # Iterate until the the centers do not change
+            print('new center points: {}'.format(new_center_pts))
             if np.all(new_center_pts-center_pts < tol):
                 break
             else:
                 center_pts = new_center_pts
 
-        # Iterate on different initializations and output the best center
-
     # return clustering center values, clustering labels of all pixels, the total sum of the centers to each pixel
-    # new_center_pts = np.around(new_center_pts)
     return [int(c) for c in best_center_pts], best_img_labels, int(min_error)
 
 
@@ -104,20 +96,21 @@ def visualize(centers,labels):
     """
     centers = np.array(centers, dtype=np.uint8)
     labels = np.array(labels, dtype=np.uint8)
-    rows, columns = labels.shape
-    im = np.empty_like(labels, dtype=np.uint8)
-    for i in range(rows):
-        for j in range(columns):
-            im[i, j] = centers[labels[i, j]]
+    img_out = np.empty_like(labels, dtype=np.uint8)
 
-    print('centers: {}'.format(centers))
-    return im
+    time1 = time.time()
+
+    for i, center in enumerate(centers):
+        img_out[labels == i] = center
+
+    time2 = time.time()
+    print(time2-time1)
+    return img_out
 
      
 if __name__ == "__main__":
-    img = utils.read_image('monroe.PNG')
+    img = utils.read_image('lenna.png')
     k = 2
-    print("maximum value: {}".format(np.max(img)))
     start_time = time.time()
     centers, labels, sumdistance = kmeans(img, k)
     result = visualize(centers, labels)
@@ -126,6 +119,7 @@ if __name__ == "__main__":
     running_time = end_time - start_time
     print(running_time)
 
+    print('centers: {}'.format(centers))
     centers = list(centers)
     with open('results/task1.json', "w") as jsonFile:
         jsonFile.write(json.dumps({"centers":centers, "distance":sumdistance, "time":running_time}))
