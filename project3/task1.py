@@ -32,21 +32,20 @@ def kmeans(img, k):
             Clustering labels of all pixels;
             Minimum summation of distance between each pixel and its center.  
     """
+    rows, columns = img.shape
     # Return Values
-    best_center_pts = np.random.choice(np.arange(256, dtype=int), 2, replace=False)
+    best_center_pts = np.random.choice(np.arange(256, dtype=float), k, replace=False)
     best_img_labels = np.empty_like(img)
-    min_error = 9999999999
-    iterations = 1
+    min_error = rows*columns*256
+
+    iterations = 1000
     for iteration in range(iterations):
         # Randomly choose k-centers
         # Initialize centers in range [0,255]
-        rows, columns = img.shape
-        center_pts = np.random.choice(np.arange(256, dtype=int), 2, replace=False)
-        tol = 0.001
-
+        center_pts = np.random.choice(np.arange(256, dtype=float), k, replace=False)
         while True:
             # Calculate all the errors
-            img_errors = np.empty((rows, columns, k), dtype=np.uint8)
+            img_errors = np.empty((rows, columns, k), dtype=float)
             for i in range(k):
                 img_errors[:, :, i] = np.abs(img - center_pts[i])
 
@@ -62,23 +61,23 @@ def kmeans(img, k):
                 best_img_labels = img_label
 
             # Calculate new center point (center of the labeled groups)
-            # sums = np.zeros_like(center_pts, dtype=int)
-            # counts = np.zeros_like(center_pts, dtype=int)
             new_center_pts = np.zeros_like(center_pts, dtype=float)
             for i in range(k):
+                if np.all(img_label != i):
+                    # If one of the centers has no pixels in it
+                    new_center_pts[i] = center_pts[i]
+                    # print('here')
+                    continue
                 new_center_pts[i] = np.around(np.mean(img[img_label == i]))
 
             # Need to check for Nan (meaning a group does not have any pixels)
-
-            # if np.any(counts == 0):
-            #     print('counts is 0')
+            # print(new_center_pts)
+            # if np.any(new_center_pts == np.nan):
+            #     print('!!! center point has no pixels !!!')
             #     break
 
-
-
             # Iterate until the the centers do not change
-            print('new center points: {}'.format(new_center_pts))
-            if np.all(new_center_pts-center_pts < tol):
+            if np.all(new_center_pts == center_pts):
                 break
             else:
                 center_pts = new_center_pts
@@ -96,15 +95,11 @@ def visualize(centers,labels):
     """
     centers = np.array(centers, dtype=np.uint8)
     labels = np.array(labels, dtype=np.uint8)
+
     img_out = np.empty_like(labels, dtype=np.uint8)
-
-    time1 = time.time()
-
     for i, center in enumerate(centers):
         img_out[labels == i] = center
 
-    time2 = time.time()
-    print(time2-time1)
     return img_out
 
      
