@@ -36,6 +36,10 @@ def median_filter(img):
         for j in range(pad, columns - pad):
             out_img[i-pad, j-pad] = np.median(padded_img[i-pad:i+pad+1, j-pad:j+pad+1])
             # print(np.sort(padded_img[i-pad:i+pad+1, j-pad:j+pad]))
+
+
+
+
     return out_img
 
 def mse(img1, img2):

@@ -38,52 +38,103 @@ def kmeans(img, k):
     best_img_labels = np.empty_like(img)
     min_error = rows*columns*256
 
-    iterations = 1000
-    for iteration in range(iterations):
-        # Randomly choose k-centers
-        # Initialize centers in range [0,255]
-        center_pts = np.random.choice(np.arange(256, dtype=float), k, replace=False)
-        while True:
-            # Calculate all the errors
-            img_errors = np.empty((rows, columns, k), dtype=float)
-            for i in range(k):
-                img_errors[:, :, i] = np.abs(img - center_pts[i])
-
-            # Calculate image labels
-            img_label = np.argmin(img_errors, axis=2)
-
-            # Calculate total error
-            error = np.sum(np.min(img_errors, axis=2))
-
-            if error < min_error:
-                best_center_pts = center_pts
-                min_error = error
-                best_img_labels = img_label
-
-            # Calculate new center point (center of the labeled groups)
-            new_center_pts = np.zeros_like(center_pts, dtype=float)
-            for i in range(k):
-                if np.all(img_label != i):
-                    # If one of the centers has no pixels in it
-                    new_center_pts[i] = center_pts[i]
-                    # print('here')
+    if k == 2:
+        center_pairs = []
+        possible_center_points = np.unique(img)
+        for i in range(len(possible_center_points)):
+            for j in range(i+1, len(possible_center_points)):
+                if i == j:
                     continue
-                new_center_pts[i] = np.around(np.mean(img[img_label == i]))
+                center_pairs.append([possible_center_points[i], possible_center_points[j]])
 
-            # Need to check for Nan (meaning a group does not have any pixels)
-            # print(new_center_pts)
-            # if np.any(new_center_pts == np.nan):
-            #     print('!!! center point has no pixels !!!')
-            #     break
+        # run through all possible initializations
+        for i, center_pts in enumerate(center_pairs):
+            if i % int(len(center_pairs)/10) == 0:
+                print('{}% complete'.format(round(i/len(center_pairs)*100)))
 
-            # Iterate until the the centers do not change
-            if np.all(new_center_pts == center_pts):
-                break
-            else:
-                center_pts = new_center_pts
+            new_center_pts = np.empty_like(center_pts, dtype=float)
+            while True:
+                # Calculate all the errors
+                img_errors = np.empty((rows, columns, 2), dtype=float)
+                img_errors[:, :, 0] = np.abs(img - center_pts[0])
+                img_errors[:, :, 1] = np.abs(img - center_pts[1])
 
-    # return clustering center values, clustering labels of all pixels, the total sum of the centers to each pixel
-    return [int(c) for c in best_center_pts], best_img_labels, int(min_error)
+                # Calculate image labels
+                img_label = np.argmin(img_errors, axis=2)
+
+                # Calculate total error
+                error = np.sum(np.min(img_errors, axis=2))
+
+                if error < min_error:
+                    best_center_pts = center_pts
+                    min_error = error
+                    # print(min_error)
+                    best_img_labels = img_label
+
+                # Calculate new center point (center of the labeled groups)
+                if np.all(img_label != 0):
+                    # If one of the centers has no pixels in it
+                    new_center_pts[0] = center_pts[0]
+                    new_center_pts[1] = np.around(np.mean(img[img_label == 1]))
+                elif np.all(img_label != 1):
+                    new_center_pts[1] = center_pts[1]
+                    new_center_pts[0] = np.around(np.mean(img[img_label == 0]))
+                else:
+                    new_center_pts[0] = np.around(np.mean(img[img_label == 0]))
+                    new_center_pts[1] = np.around(np.mean(img[img_label == 1]))
+
+                # Iterate until the the centers do not change
+                if np.all(new_center_pts == center_pts):
+                    break
+                else:
+                    center_pts = new_center_pts
+
+        # return center values, center labels of all pixels, the total sum of the distance of center to its pixel
+        return [int(c) for c in best_center_pts], best_img_labels, int(min_error)
+
+    else:
+        iterations = 10
+        for iteration in range(iterations):
+            if iteration % int(iterations/10) == 0:
+                print('{}% complete'.format(round(iteration / iterations * 100)))
+            # Randomly choose k-centers
+            # Initialize centers in range [0,255]
+            center_pts = np.random.choice(np.arange(256, dtype=float), k, replace=False)
+            while True:
+                # Calculate all the errors
+                img_errors = np.empty((rows, columns, k), dtype=float)
+                for i in range(k):
+                    img_errors[:, :, i] = np.abs(img - center_pts[i])
+
+                # Calculate image labels
+                img_label = np.argmin(img_errors, axis=2)
+
+                # Calculate total error
+                error = np.sum(np.min(img_errors, axis=2))
+
+                if error < min_error:
+                    best_center_pts = center_pts
+                    min_error = error
+                    # print(min_error)
+                    best_img_labels = img_label
+
+                # Calculate new center point (center of the labeled groups)
+                new_center_pts = np.zeros_like(center_pts, dtype=float)
+                for i in range(k):
+                    if np.all(img_label != i):
+                        # If one of the centers has no pixels in it
+                        new_center_pts[i] = center_pts[i]
+                        continue
+                    new_center_pts[i] = np.around(np.mean(img[img_label == i]))
+
+                # Iterate until the the centers do not change
+                if np.all(new_center_pts == center_pts):
+                    break
+                else:
+                    center_pts = new_center_pts
+
+        # return center values, center labels of all pixels, the total sum of the distance of center to its pixel
+        return [int(c) for c in best_center_pts], best_img_labels, int(min_error)
 
 
 def visualize(centers,labels):
@@ -114,7 +165,6 @@ if __name__ == "__main__":
     running_time = end_time - start_time
     print(running_time)
 
-    print('centers: {}'.format(centers))
     centers = list(centers)
     with open('results/task1.json', "w") as jsonFile:
         jsonFile.write(json.dumps({"centers":centers, "distance":sumdistance, "time":running_time}))
